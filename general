@@ -1,0 +1,44 @@
+Goal:
+    A framework for benhcmarks through sage.
+
+Features:
+    - support for different CAS
+    - database of test cases
+    - database with results
+    - visualization (interact?)
+
+classes:
+    - Machine (the hardware specification)
+        - CPU speed
+        - # of cores
+        - memory
+        - OS
+    - Method
+        - CAS
+        - description
+        - name
+        - flags
+        - dependencies
+    - Mark
+        - time
+        - memory
+        - success or failure
+    - Instance
+        - description
+        - name
+        - data
+        - attributes
+    - Dataset
+        - description
+        - name
+        - instances
+        - attributes
+    - Benchmarks
+        - name
+        - description
+        - runs (triples of (method, instance, mark))
+        - results (triples of (method, dataset, mark))
+    - Plot2D
+        - x-axis attribute
+        - x-axis name
+        - attribute mask (select the datasets)
