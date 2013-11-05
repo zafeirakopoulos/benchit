@@ -1,0 +1,14 @@
+ {% extends "general.html" %}
+{% block title %} Instance: {{instance.id}}{% endblock %}
+
+{% block content %}
+    <h1>Instance {{instance.id}}</h1>
+    <br>
+    <table border=1>
+    {% for key in instance.keys() %}
+        {% if key!="id" %} 
+            <tr> <td> {{key}}</td><td>{{instance[key]}}</td></tr>  
+        {% endif %}
+    {% endfor %}
+    </table>
+{% endblock %}

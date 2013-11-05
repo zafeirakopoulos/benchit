@@ -1,0 +1,14 @@
+ {% extends "general.html" %}
+{% block title %} Method: {{method.name}}{% endblock %}
+
+{% block content %}
+    <h1>Method: {{method.name}}</h1>
+    <br>
+    <table border=1>
+    {% for key in method.definition.keys() %}
+        {% if key!="id" %} 
+            <tr> <td> {{key}}</td><td>{{method.definition[key]}}</td></tr>  
+        {% endif %}
+    {% endfor %}
+    </table>
+{% endblock %}

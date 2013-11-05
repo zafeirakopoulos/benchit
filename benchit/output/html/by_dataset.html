@@ -1,0 +1,46 @@
+ {% extends "general.html" %}
+{% block title %} Results for dataset: {{dataset.id}}{% endblock %}
+
+{% block content %}
+
+    <br><br>
+
+    {% for selector in selectors %}
+        <table border=1>
+        <tr> 
+        <td></td>
+        {% for method_key in methods.keys() %}
+             <td colspan= {{ methods[method_key][1][selector[method_key]] | length }} >
+                {{  methods[method_key][0] }} </td>
+             <td>  </td>  
+        {% endfor %}
+        </tr>
+
+        <tr>
+        <td>Instance</td>
+        {% for method_key in methods.keys() %}
+            {% for metric_key in methods[method_key][1][selector[method_key]].keys() %}
+                <td> {{  methods[method_key][1][selector[method_key]][metric_key] }} </td>
+             {% endfor %}
+             <td>  </td>
+        {% endfor %}
+        </tr>
+
+        {% for instance_key in results.keys() %}
+            <tr>
+            <td> {{ instance_key }} </td>
+            {% for method_key in methods.keys() %}
+                        {% for metric in methods[method_key][1][selector[method_key]].keys() %}
+                            <td> {{ results[instance_key][method_key][metric] }} </td>
+                        {% endfor %}
+                <td></td>
+            {% endfor %}
+            </tr>
+        {% endfor %}
+
+        </table>
+        <br><br>
+    {% endfor %}
+    <br><br>
+
+{% endblock %}

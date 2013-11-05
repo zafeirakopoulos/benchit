@@ -1,0 +1,40 @@
+ {% extends "general.html" %}
+{% block title %} Benchmark: {{method.id}} - {{instance.id}}{% endblock %}
+
+{% block content %}
+
+    <br><br>
+    <h2>Metrics:</h2>
+    <br>
+    {% for metric in metrics %}
+        <table border=1>
+        {% for key in metric[1].keys() %}
+            <tr> <td> {{ metric[1][key]}} </td><td> {{ metric[0][key] }} </td></tr>  
+        {% endfor %}
+        </table>
+        <br><br>
+    {% endfor %}
+    <br><br>
+
+    <h2>Instance {{instance.id}}</h2>
+    <br>
+    <table border=1>
+    {% for key in instance.keys() %}
+        {% if key!="id" %} 
+            <tr> <td> {{key}}</td><td>{{instance[key]}}</td></tr>  
+        {% endif %}
+    {% endfor %}
+    </table>
+    <br><br>
+
+    <h2>Method: {{method.name}}</h2>
+    <br>
+    <table border=1>
+    {% for key in method.definition.keys() %}
+        {% if key!="id" %} 
+            <tr> <td> {{key}}</td><td>{{method.definition[key]}}</td></tr>  
+        {% endif %}
+    {% endfor %}
+    </table>
+   
+{% endblock %}
