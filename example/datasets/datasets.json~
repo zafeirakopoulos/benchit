@@ -1,0 +1,13 @@
+ [
+        {   "name":"a nice name",
+            "filters": {
+                        "nvars":"3",
+                        "equations":"False"
+                       }
+        },
+        {   "name":"a nice name 4",
+            "filters": {
+                        "nvars":"2"
+                       }
+        }
+    ]

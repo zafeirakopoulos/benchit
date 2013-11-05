@@ -1,0 +1,7 @@
+ [
+        {   "name":"a nice name",
+            "filters": {
+                        "equations":"False"
+                       }
+        }
+    ]

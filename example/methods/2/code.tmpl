@@ -1,0 +1,47 @@
+
+<< Omega2.m
+
+    {# {%  %} #}
+
+    os:=OSum[ {%- set  i=0 -%}
+    {%- for element in A[0] -%}
+        {%- if i==0  -%}
+            z{{i}}^x{{i}}
+        {%- endif -%} 
+        {%- if i!=0  -%}
+            *z{{i}}^x{{i}}
+        {%- endif -%} 
+        {%- set i=i+1 %}
+    {%- endfor -%}   , {    {%- set  i=0 -%}
+    {%- set  j=0 -%}
+    {%- for row in A -%}
+        {%- if i!=0  -%}
+            ,
+        {%- endif -%} 
+        {%- for c in row -%}
+            {%- if j==0  -%}
+                {{c}} *x{{ j }}
+            {%- endif -%} 
+            {%- if j!=0  -%}
+                + ({{c}}) *x{{ j }}
+            {%- endif -%} 
+            {%- set j=j+1 -%}
+        {%- endfor -%}
+        >= {{ b[i] }}
+        {%- set i=i+1 %}
+    {%- endfor -%}     } , \[Lambda] ]
+    Timing[ff=OR[os]]
+    ff=ff /.  { {%- set  i=0 -%}
+    {%- for element in A[0] -%}
+        {%- if i==0  -%}
+           x{{i}} -> 0 
+        {%- endif -%} 
+        {%- if i!=0  -%}
+           , x{{i}} -> 0 
+        {%- endif -%} 
+        {%- set i=i+1 %}
+    {%- endfor -%} }
+  
+    InputForm[ff]
+
+Quit[]
