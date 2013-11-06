@@ -1,0 +1,320 @@
+# -*- coding: utf-8 -*-
+# checks if a vector is forward
+
+debug=true
+
+def vector_is_forward(v):
+    for vi in v:
+        if vi != 0:
+            if vi > 0:
+                return 1
+            if vi < 0:
+                return 0
+    return 1
+
+# the function flip as given in the article
+# s is a sign
+# I is a 0-1 vector
+# V is a list of vectors
+# q is a vector
+def flip(C):
+    s,I,V,q = C
+    J = [ not vector_is_forward(v) for v in V ] # 1 = backward, 0 = forward
+    Jpm = [ -1 if Ji else 1 for Ji in J ] # -1 = backward, 1 = forward
+    _s = prod(Jpm) * s
+    _I = vector([ 1 if Ii != Ji else 0 for (Ii,Ji) in zip(I,J) ])
+    _V = [ Jpmi * v for (Jpmi,v) in zip(Jpm,V) ]
+    return _s, _I, _V, q
+
+# a vector v
+def prim_v(v):
+    return v*(1/abs(gcd(v)))
+
+# the function prim as given in the article
+# a list of vectors V
+def prim(V):
+    return map(prim_v, V)
+
+def eliminate_last_coordinate(C,e=0):
+    if debug:
+        print "in eliminate_last_coordinate"
+        print C
+    s,I,V,q = C
+    k = len(V)
+    lambd = len(V[0]) - 1 # note that we have to shift by 1 here because in Sage indicies start at zero
+    v = lambda j: q - q[lambd]/(V[j][lambd]) * V[j] ## which sign here??? abs on q[lambd]??
+    def ghat(i,j):
+        if i == j:
+            return (-1 if q[lambd]>=0 else 1)*V[j]
+        else:
+            return sgn(V[j][lambd]) * (V[j][lambd] * V[i] - V[i][lambd] * V[j]) # warning: check the first case if q_\lambd = 0
+    g = lambda i, j: ghat(i,j)[:-1] # this is Python for dropping the last coordinate
+    G = (lambda j: [ g(i,j) for i in xrange(k) ]) if e==0 else (lambda j: [ g(i,j) for i in xrange(k) if j != i])
+    def _I(j): # this is ugly. would like a one-liner for this
+        theI = copy(I)
+        if e == 0:
+            theI[j] = 0
+        else:
+            # this whole thing drops the j-th element of the list I
+            theI = theI.list()
+            theI.pop(j)
+            theI = vector(theI)
+        return theI
+    def Bplus():
+        return [ (s,_I(j),prim(G(j)),v(j)[:-1]) for j in xrange(k) if V[j][lambd] > 0 ]
+    def Bminus():
+        return [ (s,_I(j),prim(G(j)),v(j)[:-1]) for j in xrange(k) if V[j][lambd] < 0 ]
+    def Cprime():
+        _V = prim( [w[:-1] for w in V] )
+        return (s,I,_V,q[:-1])
+    if e == 0:
+        if q[lambd] < 0:
+            B = Bplus()
+        else: # if q[lambd] >= 0
+            B = Bminus() + [Cprime()]
+    else: # if e == 1
+        if q[lambd] < 0 or (q[lambd] == 0 and exists(range(k),lambda j: V[j][lambd] > 0)[0]):
+            print q[lambd] < 0
+            print (q[lambd] == 0 and exists(range(k),lambda j: V[j][lambd] > 0))
+            print "."
+            B = Bplus()
+        elif q[lambd] > 0 or (q[lambd] == 0 and exists(range(k),lambda j: V[j][lambd] < 0)[0]):
+            print ".."
+            B = Bminus()
+        else: # q[lambd] == 0 and forall(range(k), lambda j: V[j][lambd] == 0)[0]
+            print "..."
+            B = [Cprime()]
+    if debug:
+        print "BBB"
+        print B, q, e, V, k, lambd, q[lambd], [V[j][lambd] for j in range(k)]
+    return [ flip(C) for C in B ]
+
+# a list of symbolic cones L
+# we *have* to parallelize this!
+def elim(L,e):
+    concat = lambda a,b: a+b
+    return reduce(concat, map(lambda sc: eliminate_last_coordinate(sc,e), L))
+
+# computes f(f(...f(x))) where k is the number of fs
+# there *has* to be a better way to write this.
+def times(f,k,x):
+    tmp = x
+    for i in xrange(k):
+        tmp = f(tmp)
+    return tmp
+
+# a matrix A
+# a vector b
+def symbolic_cones(A,b,E):
+    d = A.ncols()
+    m = A.nrows()
+    Id = identity_matrix(ZZ,d)
+    V = Id.stack(A)
+    q = vector( [0 for i in xrange(d)] + [-1 * bi for bi in b] )
+    L = [(1,vector(ZZ,d),V.columns(),q)] # in contrast to the article, we represent V as a list not as a matrix
+    E = list(E) # clone E
+    E.reverse() # iterate through E in reverse order
+    for e in E:
+        L = elim(L,e)
+    return L
+
+def fract(x,e):
+    if x.is_integral():
+        return e
+    else:
+        return x - floor(x)
+
+def fract_v(v,I):
+    return vector([ fract(v[i], I[i]) for i in xrange(len(v))])
+
+def H_description_of_affine_hull(V,q):
+    if debug:
+        print "H description"
+        print V
+        print q
+    P, L, U = V.LU()
+    A = L**(-1)*P**(-1)
+    k = V.ncols()
+    d = V.nrows()
+    if d == k:
+        # as we assume that V is full rank, this implies that the cone is full dimensional
+        # therefore the system describing the affine hull is empty
+        return ([],[])
+    Ap = A[-(d-k):]
+    b = Ap * q
+    if debug:
+        print Ap
+        print b
+    # this last part makes sure that the system Ax=b is integral
+    m = Ap.nrows()
+    multipliers = [ lcm([ Ap[i,j].denominator() for j in range(d) ] + [b[i].denominator()]) for i in range(m) ]
+    S = diagonal_matrix(multipliers)
+    result = (S*Ap, S*b)
+    if debug:
+        print result
+    return result
+    # for i in range(m):
+    #     denominators = [ Ap[i,j].denominator() for j in range(d) ] + [b[i].denominator()]
+    #     multipliers = lcm(denominators)
+    #     diagonal_matrix()
+    #     for j in range(d):
+    #         Ap[i,j] = multiplier * Ap[i,j]
+    #         b[i] = multiplier * b[i]
+    # return (Ap,b)
+
+def solve_linear_diophantine_equation_system(A,b):
+    # it is crucial that A is a matrix over ZZ. so reconstruct it!
+    A = column_matrix(ZZ,A.columns())
+    S, Uinv, Vinv = A.smith_form()
+    if debug:
+        print "in solve linear diophantine system over the integers (i)"
+        print A,b
+        print S, Uinv, Vinv
+    n = A.ncols()
+    m = A.nrows()
+    p = Uinv * b
+    q = vector([ p[i]/S[i][i] for i in range(m) ] + [ 0 for i in range(n-m)])
+    r = Vinv * q
+    if debug:
+        print "in solve linear diophantine system over the integers"
+        print A,b
+        print S, Uinv, Vinv
+        print p
+        print q
+        print r
+    return r
+
+def is_integral(v):
+    return reduce(lambda a,b: a and b, [vi.is_integral() for vi in v])
+
+def enumerate_fund_par(C):
+    if debug:
+        print "in enumerate_fund_par"
+        print C
+    s,I,V,q = C
+    k = len(V)
+    d = len(V[0])
+    # note: in Sage the Smith form is UVW = S, whereas in the draft we use V=USW.
+    V = column_matrix(ZZ,V) # turn V from a list into a matrix over ZZ
+    p = vector([0 for i in range(d)])
+    if k < d:
+        # find an integer point in the affine span
+        A,b = H_description_of_affine_hull(V,q)
+        p = solve_linear_diophantine_equation_system(A,b)
+    if debug:
+        print "Enumerate Fund Par"
+        print V, q
+        print p
+    if not is_integral(p):
+        return []
+    S,Uinv,Winv = V.smith_form()
+    s = [S[i][i] for i in xrange(k)] + [1 for i in range(d-k)]
+    T = diagonal_matrix([1/s[i] for i in xrange(k)]).augment(zero_matrix(QQ,k,d-k))
+    L = [ vector(v) for v in CartesianProduct( *[xrange(s[i]) for i in xrange(d)] ) ]
+    qhat = Uinv * (q - p)
+    result = [ V * fract_v( Winv*T*(v-qhat), I) + q for v in L ]
+    #if debug: print result
+    return result
+
+def enumerate_fund_pars(cones):
+    return [(C,enumerate_fund_par(C)) for C in cones]
+
+def symbolic_cone_w_fund_par_2_generating_function(CF,sage=1, parent="symbolic"):
+    C,F = CF
+    s,I,V,q = C
+    d = len(V[0])
+    if sage:
+        if parent=="symbolic":
+            var(["z"+str(i+1) for i in range(d)])
+            num = sum([ prod([SR("z"+str(i))**t[i] for i in range(d)]) for t in F])
+            den = prod([ (1- prod([SR("z"+str(i))**c[i] for i in range(d)]) ) for c in V])
+            gf = s * num/den
+            return gf
+        if parent=="fraction field":
+            ring = PolynomialRing(QQ,["z"+str(i+1) for i in range(d)])
+            num = sum([ prod([ring.gen(i)**t[i] for i in range(d)]) for t in F])
+            den = prod([ (1- prod([ring.gen(i)**c[i] for i in range(d)]) ) for c in V])
+            N = num(*(list(ring.gens())))
+            D = den(*(list(ring.gens())))
+            F = FractionField(ring)
+            gf = s * F(N/D)
+            return gf
+    else: # return gf as string
+        num_monomials = [reduce(lambda a,b: a+"*"+b, [ "z%d**(%d)" % (i+1,t[i]) for i in range(d) ]) for t in F]
+        if len(num_monomials) == 0:
+            return "0"
+        else:
+            num = reduce(lambda a,b: a+"+"+b, num_monomials)
+            den = reduce(lambda a,b: a+"*"+b, [ "(1-%s)" % monomial for monomial in [ reduce(lambda a,b: a+"*"+b, [ "z%d**(%d)" % (i+1,c[i]) for i in range(d)]) for c in V]])
+            return ("(%d*(%s)/(%s))" % (s,num,den))
+#    if sage:
+#        ring = PolynomialRing(QQ,["z"+str(i+1) for i in range(d)])
+#        num = sum([ prod([ring.gen(i)**t[i] for i in range(d)]) for t in F])
+#        den = prod([ (1- prod([ring.gen(i)**c[i] for i in range(d)]) ) for c in V])
+#        N = num(*(list(ring.gens())))
+#        D = den(*(list(ring.gens())))
+#        F = FractionField(ring)
+#        gf = s * F(N/D)
+#        return gf
+#    else: # return gf as string
+#        num = reduce(lambda a,b: a+"+"+b, [reduce(lambda a,b: a+"*"+b, [ "z%d**%d" % (i,t[i]) for i in range(d) ]) for t in F])
+#        den = reduce(lambda a,b: a+"*"+b, [ "(1-%s)" % monomial for monomial in [ reduce(lambda a,b: a+"*"+b, [ "z%d**%d" % (i,c[i]) for i in range(d)]) for c in V]])
+#        return ("(%d*(%s)/(%s))" % (s,num,den))
+
+import time
+
+# the sage parameter determines whether the rational function representation is returned as a string or as a sage rational function
+def solve(A,b,E,sage=0,benchmark=0,determinants=0):
+    if debug:
+        print "START SOLVE"
+    A = matrix(ZZ,A)
+    b = vector(ZZ,b)
+    if benchmark:
+        time_start = time.time()
+        print "start"
+    if debug: print "Compute scs"
+    scs = symbolic_cones(A,b,E)
+    if benchmark:
+        time_scones = time.time()
+        print "symbolic cones computation took %s" % (time_scones - time_start)
+        print "total number of symbolic cones is %d" % len(scs)
+    if determinants:
+        print "determinants"
+        for c in scs:
+            print determinant_of_symbolic_cone(c) # will fail for lower dim cones!
+    if debug:
+        print "Symbolic Cones"
+        print "have %d cones in total" % len(scs)
+        for c in scs:
+            print c
+    if debug: print "Compute scsfp"
+    scsfp = enumerate_fund_pars(scs)
+    if debug:
+        print "Symbolic Cones with Fund Par"
+        print scsfp
+    if benchmark:
+        time_fps = time.time()
+        print "fund par enumeration took %s" % (time_fps - time_scones)
+    if debug: print "Compute gfs"
+    gfs = map(lambda c: symbolic_cone_w_fund_par_2_generating_function(c,sage), scsfp)
+    if benchmark:
+        time_genfun = time.time()
+        print "generating function computation took %s" % (time_genfun - time_fps)
+    if debug: print "Compute gf"
+    if sage:
+        gf = sum(gfs)
+    else:
+        print gfs
+        print len(gfs)
+        gf = (reduce(lambda a,b: a+"+"+b, gfs) if len(gfs) != 0 else "0")
+    if benchmark:
+        time_summation = time.time()
+        print "summation took %s" % (time_summation - time_genfun)
+        print "total time taken %s" % (time_summation - time_start)
+    return gf, scs
+
+def determinant_of_symbolic_cone(C):
+    s,I,V,q = C
+    m = matrix(ZZ,V)
+    return m.det()
+

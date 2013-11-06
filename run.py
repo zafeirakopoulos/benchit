@@ -7,6 +7,7 @@ b.read_methods()
 b.read_instances()
 b.read_datasets()
 b.create_benchmarks()
-b.run_benchmarks(10)
+#b.run_benchmarks(100)
 
+b.generate_html()
 

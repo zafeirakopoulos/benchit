@@ -17,5 +17,14 @@
             "parameters":{
                   },
             "metrics":[["total_time","total time"]]
+        },
+        {
+            "id":"3",
+            "name":"Xin",
+            "system":"maple",
+            "system_call":"maple < ",
+            "parameters":{
+                  },
+            "metrics":[["total_time","total time"]]
         }
     ]
