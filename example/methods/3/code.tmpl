@@ -18,6 +18,8 @@ read "/home/zafeirak/Desktop/xin/Ell2.mpl";
  t := t*p:
  va := seq(a[i], i = 1 .. m):
  vz := seq(z[i], i = 1 .. n):
- time(E_Oge(t, [vx], [va]));
-
+ t1:=time[real]():
+ r:=E_Oge(t, [vx], [va]):
+time[real]()-t1;
+r;
 quit;

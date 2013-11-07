@@ -11,6 +11,7 @@ from Instance import *
 from Dataset import *
 from Benchmark import *
 
+from OutputFactory import *
 
 class Bench(object):
     root_path=None
@@ -38,6 +39,9 @@ class Bench(object):
     datasets={}
     # A dictionary of benchmarks.
     benchmarks={}
+
+    #Output Factory
+    OF=None
 
     def __init__(self, bench_name):
         self.root_path=os.path.join(os.getcwd(),bench_name)
@@ -200,161 +204,17 @@ class Bench(object):
             self.benchmarks[benchmark_id].run(timeout)
 
 
+    def generate_json_output(self):
+        self.json_path=os.path.join(self.results_path,"json")
+        if not os.path.exists(self.json_path): os.mkdir(self.json_path)
 
-    def generate_html(self):
-        html_path=os.path.join(os.getcwd(),"benchit","output","html")
-        self.html_env = Environment(loader=FileSystemLoader(html_path))
-        self.html_tmpl={}
-        try:
-            self.html_tmpl["general"]= self.html_env.get_template("general.html")
-        except Exception:
-            raise Exception("Could not load general template")
-
-        # Html for instances
-        instances_path=os.path.join(self.results_path,"instances")
-        if not os.path.exists(instances_path): os.mkdir(instances_path)
-        try:
-            self.html_tmpl["instance"]= self.html_env.get_template("instance.html")
-        except Exception:
-            raise Exception("Could not load instance template")
-        # Iterate over all instances
-        for instance_key in self.instances:
-            instance_html=self.html_tmpl["instance"].render({"instance":self.instances[instance_key]})
-            outfile_path=os.path.join(instances_path, instance_key+".html")
-            if os.path.exists(outfile_path):
-                warnings.warn(Warning("Html already exists."),stacklevel=2)
-            try:
-                htmlfile=open(outfile_path,"w")
-            except Exception:
-                raise Exception("Html file could not open.")
-            htmlfile.write(instance_html)
-            htmlfile.close()
-
-        # Html for methods
-        methods_path=os.path.join(self.results_path,"methods")
-        if not os.path.exists(methods_path): os.mkdir(methods_path)
-        try:
-            self.html_tmpl["method"]= self.html_env.get_template("method.html")
-        except Exception:
-            raise Exception("Could not load method template")
-        # Iterate over all methods
-        for method_key in self.methods.keys():
-            method_html=self.html_tmpl["method"].render({"method":self.methods[method_key]})
-            outfile_path=os.path.join(methods_path, method_key+".html")
-            if os.path.exists(outfile_path):
-                warnings.warn(Warning("Html already exists."),stacklevel=2)
-            try:
-                htmlfile=open(outfile_path,"w")
-            except Exception:
-                raise Exception("Html file could not open.")
-            htmlfile.write(method_html)
-            htmlfile.close()
-
-        # Html for datasets
-        datasets_path=os.path.join(self.results_path,"datasets")
-        if not os.path.exists(datasets_path): os.mkdir(datasets_path)
-        try:
-            self.html_tmpl["dataset"]= self.html_env.get_template("dataset.html")
-        except Exception:
-            raise Exception("Could not load dataset template")
-        # Iterate over all datasets
-        for dataset_key in self.datasets.keys():
-            dataset_html=self.html_tmpl["dataset"].render({"dataset":self.datasets[dataset_key]})
-            outfile_path=os.path.join(datasets_path, dataset_key+".html")
-            if os.path.exists(outfile_path):
-                warnings.warn(Warning("Html already exists."),stacklevel=2)
-            try:
-                htmlfile=open(outfile_path,"w")
-            except Exception:
-                raise Exception("Html file could not open.")
-            htmlfile.write(dataset_html)
-            htmlfile.close()
-
-
-        # Html for benchmarks
-        benchmarks_path=os.path.join(self.results_path,"benchmarks")
-        if not os.path.exists(benchmarks_path): os.mkdir(benchmarks_path)
-        try:
-            self.html_tmpl["benchmark"]= self.html_env.get_template("benchmark.html")
-        except Exception:
-            raise Exception("Could not load benchmark template")
-        # Iterate over all benchmarks
         for benchmark_key in self.benchmarks.keys():
             benchmark=self.benchmarks[benchmark_key]
-            metrics=[ [ benchmark.read_output(metric_set_key), benchmark.method.metric_sets_captions[metric_set_key] ] for metric_set_key in range(len(benchmark.method.metric_sets)) ]
-            the_dict={"benchmark":benchmark,"method":benchmark.method,"instance":benchmark.instance,"metrics":metrics}
-            benchmark_html=self.html_tmpl["benchmark"].render(the_dict)
-            outfile_path=os.path.join(benchmarks_path, benchmark_key+".html")
-            if os.path.exists(outfile_path):
-                warnings.warn(Warning("Html already exists."),stacklevel=2)
-            try:
-                htmlfile=open(outfile_path,"w")
-            except Exception:
-                raise Exception("Html file could not open.")
-            htmlfile.write(benchmark_html)
-            htmlfile.close()
+            metrics= benchmark.create_json_output(self)
 
-        # Html for by dataset
+    def generate_rest_output(self):
+        self.rest_path=os.path.join(self.results_path,"rest")
+        if not os.path.exists(self.rest_path): os.mkdir(self.rest_path)
 
-
-        bydataset_path=os.path.join(self.results_path,"by_dataset")
-        if not os.path.exists(bydataset_path): os.mkdir(bydataset_path)
-        try:
-            self.html_tmpl["by_dataset"]= self.html_env.get_template("by_dataset.html")
-        except Exception:
-            raise Exception("Could not load bydataset template")
-
-
-        # Create a dictionary for method names
-        methods={}
-        for method_id in self.methods.keys():
-            methods[method_id]=[ self.methods[method_id].name, self.methods[method_id].metric_sets_captions]
-
-
-        print methods
-
-        for dataset_key in self.datasets.keys():
-            # Let dataset be the currently examined dataset
-            dataset=self.datasets[dataset_key]
-
-            # Create a dictionary: keys are instance ids and values are dictionaries
-             # with key the method id and value the dictionary of measurements
-            instance_results={}
-            for instance in dataset.instances:
-                instance_results[instance]={}
-
-            # Read the output ofr each benchmark and asisgn it to the appropriate instance
-            benchmarks= [self.benchmarks[benchmark_key] for benchmark_key in dataset.benchmarks ]
-            for benchmark in benchmarks:
-                data= benchmark.read_output()
-                instance_results[benchmark.instance["id"]][benchmark.method.id]=data
-
-            tmp=[ list(itertools.product(*[ [method],range(len(self.methods[method].metric_sets))])) for method in self.methods]
-
-            metric_combo=list(itertools.product(*tmp))
-
-            selector=[]
-            for combo in metric_combo:
-                tmp_dict={}
-                for pair in combo:
-                    tmp_dict[pair[0]]=pair[1]
-                selector.append(tmp_dict)
-
-
-            #the_dict={"dataset":dataset,"methods":methods,"instances":dataset.instances,"metric_combinations":metric_combo,"results":instance_results}
-            the_dict={"dataset":dataset,"methods":methods,"instances":dataset.instances,"selectors":selector,"results":instance_results}
-            by_dataset_html=self.html_tmpl["by_dataset"].render(the_dict)
-
-            outfile_path=os.path.join(bydataset_path, dataset_key+".html")
-
-            if os.path.exists(outfile_path):
-                warnings.warn(Warning("Html already exists."),stacklevel=2)
-            try:
-                htmlfile=open(outfile_path,"w")
-            except Exception:
-                raise Exception("Html file could not open.")
-            htmlfile.write(by_dataset_html)
-            htmlfile.close()
-
-
-    
+        if self.OF==None: self.OF=OutputFactory(self)
+        self.OF.generate_rest()

@@ -40,6 +40,7 @@ class Method(object):
         mreaders = imp.load_source(mod_name , os.path.join(bench.methods_path,str(self.id),"metric_reader.py"))
 
         # Create a dictionary of metrics.
+        self.metrics={}
         for metric in self.definition["metrics"]:
             if "correct" in metric:
                 self.has_validity=True
@@ -50,5 +51,6 @@ class Method(object):
                 self.validity = getattr(vreaders, "correct")
                 self.metrics["correct"]=Metric("correct", "correct", self.validity)
             self.metrics[metric[0]]=Metric(metric[0],metric[1],getattr(mreaders, metric[0]))
+
 
 

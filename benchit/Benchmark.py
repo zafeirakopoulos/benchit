@@ -7,6 +7,8 @@ import subprocess
 import signal
 import time 
 
+import json
+
 class Benchmark(object):
     method=None
     instance=None
@@ -56,8 +58,6 @@ class Benchmark(object):
 
     def run(self, timeout=0):
 
-        print "running (method, instance): ", self.method.id, self.instance["id"]
-
         def target():
 
             # Create the output file. This will be used to read the results
@@ -90,3 +90,52 @@ class Benchmark(object):
                 print "trying to kill"
 
             thread.join()
+
+
+
+    def create_json_output(self,bench):
+        # Open the output file for reading.
+        if not os.path.exists(self.outfile_path):
+            warnings.warn(Warning(self.outfile_path+" does not exist."),stacklevel=2)
+        try:
+            read_file=open(self.outfile_path,"rw")
+        except Exception:
+            raise Exception("Outfile could not open.")
+
+
+        # Read the output in a list of lines
+        lines=read_file.readlines()
+        data_dict={}
+
+
+
+        for metric_key in self.method.metrics.keys():
+            if metric_key=="correct":
+                data_dict[metric_key]=self.instance[self.method.metrics["correct"]]
+            else:
+                metric_callable=self.method.metrics[metric_key].reader
+                answer=metric_callable(lines)
+                if answer!=None:
+                    data_dict[metric_key]=answer
+
+        if "correct" in self.method.metrics.keys():
+            answer=self.method.validity(lines,data_dict["correct"])
+            if answer:
+                data_dict["correct"]=True
+            else:
+                data_dict["correct"]=False
+
+
+        # Create a file where the code to be executed will be placed
+        jsonfile_path=os.path.join(bench.json_path,str(self.method.id)+"_"+str(self.instance["id"])+".json")
+        if os.path.exists(jsonfile_path):
+            warnings.warn(Warning(jsonfile_path+" already exists."),stacklevel=2)
+        try:
+            self.jsonfile=open(jsonfile_path,"w")
+        except Exception:
+            raise Exception("JSON file could not open.")
+
+        json.dump(data_dict, self.jsonfile)
+
+
+

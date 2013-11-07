@@ -6,14 +6,12 @@
     <br><br>
     <h2>Metrics:</h2>
     <br>
+    <table border=1>
     {% for metric in metrics %}
-        <table border=1>
-        {% for key in metric[1].keys() %}
-            <tr> <td> {{ metric[1][key]}} </td><td> {{ metric[0][key] }} </td></tr>  
-        {% endfor %}
-        </table>
-        <br><br>
+        <tr> <td> {{ metric[1]}} </td><td> {{ metric[0] }} </td></tr>
     {% endfor %}
+    </table>
+    <br><br>
     <br><br>
 
     <h2>Instance {{instance.id}}</h2>

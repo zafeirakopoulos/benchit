@@ -3,5 +3,5 @@
 def total_time(output):
     if output==[]: return "-"
     for line in range(len(output)):
-        if ">  time(E_Oge(t, [vx], [va]));" in output[line]:
-            return output[line+1]
+        if "time[real]()-t1;" in output[line]:
+            return output[line+1].strip()
