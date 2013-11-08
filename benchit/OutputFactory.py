@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
+# -*- coding: iso-8859-1 -*-
 import os
 import sys
-sphinx_path="benchit/packages//Sphinx-1.2b3-py2.7.egg"
-sys.path.append(sphinx_path)
+#sphinx_path="benchit/packages//Sphinx-1.2b3-py2.7.egg"
+#sys.path.append(sphinx_path)
 import sphinx
 from jinja2 import Environment, FileSystemLoader
 import json
@@ -66,9 +66,9 @@ class OutputFactory(object):
             outfile.write(bench_rst) 
             outfile.close()
 
-        toctree=".. toctree:: \n  :maxdepth: 2 \n "
+        toctree=".. toctree:: \n  :maxdepth: 2\n\n"
         for filename in toc:
-            toctree=toctree+ " "+filename + " \n"
+            toctree=toctree+ "  "+filename + " \n"
         outfile=open( os.path.join(self.bench.rest_path, "index.rst" ) ,"w")
         outfile.write(toctree) 
         outfile.close()            

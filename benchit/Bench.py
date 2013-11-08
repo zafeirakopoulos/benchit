@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: iso-8859-1 -*-
 
 import os
 import json
@@ -87,8 +87,9 @@ class Bench(object):
         self.datasets_file_path=os.path.join(self.root_path,"datasets",self.bench_definition["datasets"]+".json")
 
         # The instances path is fixed
-        # TODO: Allow more than one files
-        self.instances_file_path=os.path.join(self.root_path,"instances",self.bench_definition["instances"]+".json")
+        self.instances_path=os.path.join(self.root_path,"instances")
+
+
 
         self.rest_path=os.path.join(self.results_path,"rest")
         self.json_path=os.path.join(self.results_path,"json")
@@ -133,20 +134,32 @@ class Bench(object):
     def read_instances(self):
         # The name of the json file given in the benchmarks definition
         # The file has to be placed in the instances subfolder
-        if not os.path.exists(self.instances_file_path):
-            raise Exception(self.instances_file_path+" is not a valid path.")
+        if not os.path.exists(self.instances_path):
+            raise Exception(self.instances_path+" is not a valid path.")
+
+        all_instances=[]
+        instance_files=[]
         try:
-            instances_file=open(self.instances_file_path)
+            for filename  in self.bench_definition["instances"]:
+                ifilename=os.path.join(self.instances_path, filename+".json")
+                ifile=open(ifilename)
+                instance_files.append(ifile)
         except Exception:
             raise Exception("Instances file could not open.")
 
-        # Load the json contents
-        instances_list=json.load(instances_file)
+        for i in range(len(instance_files)):
+            # Load the json contents
+            instances_data=json.load(instance_files[i])
+            for instance in instances_data:
+                tmp_id=instance["id"]
+                instance.update({"id":str(tmp_id)+"@"+str(i)})
+                all_instances.append(instance)
 
         # Iterate over the defintion dictionaries, loaded by json.
         # Create ONE dictionary for all instances in this Bench.
-        for instance in instances_list:
+        for instance in all_instances:
             self.instances[instance["id"]]=Instance(instance)
+
         return 0
 
 
@@ -180,6 +193,8 @@ class Bench(object):
         # Select the instance ids appearing in a dataset
         all_instance_ids=list(set([i for i in itertools.chain.from_iterable([self.datasets[dataset_id].instances for dataset_id in dataset_ids])]))
 
+        #print "!!!!!!!!!!!!!!!!!!!",all_instance_ids
+
         benchmark_id=1
         # Iterate over all instance ids
         for instance_id in all_instance_ids:
@@ -194,6 +209,8 @@ class Bench(object):
                     if instance_id in self.datasets[dataset_id].instances:
                         self.datasets[dataset_id].benchmarks.append(str(benchmark_id))
                 benchmark_id=benchmark_id+1
+
+        #print "!!!!!!!!!!!!!!!!!!!",self.benchmarks
         return 0
 
     def run_benchmarks(self, timeout=0, dataset_ids=None):

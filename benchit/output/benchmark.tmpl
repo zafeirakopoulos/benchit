@@ -5,31 +5,26 @@ Benchmark: {{method.id}} - {{instance["id"]}}
 Metrics:
 ==============
 
-+------------+------------+
-    {% for metric in metrics %}
-|  {{ metric[1]}} | {{ metric[0] }} |
-    {% endfor %}
-+------------+------------+
+
+{% for key in metrics.keys() %}
+    * {{ key }}: {{ metrics[key] }} 
+{%- endfor %}
+
 
 Instance {{instance["id"]}}
 =================================
 
-    ============  =============
-    {%- for key in instance.keys() -%}
-        {% if key!="id" %} 
-           {{key}}  {{instance[key]}} 
-        {%- endif -%}
-    {% endfor %}
-    =============== =============
-    
+{%- for key in instance.keys() -%}
+    {% if key!="id" %}
+        * {{key}}:  {{instance[key]}}
+    {%- endif -%}
+{% endfor %}
 
 Method: {{method.id}}
 ============================    
-    +------------+------------+
-    {% for key in method.definition.keys() %}
-        {% if key!="id" %} 
-         | {{key}} | {{method.definition[key]}} |
-        {% endif %}
-    {% endfor %}
-    +------------+------------+
-   
+
+{% for key in method.definition.keys() %}
+    {% if key!="id" %}
+        * {{key}} : {{method.definition[key]}}
+    {% endif %}
+{% endfor %}
