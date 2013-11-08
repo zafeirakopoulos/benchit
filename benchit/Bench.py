@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 
 import os
 import json
@@ -90,6 +90,9 @@ class Bench(object):
         # TODO: Allow more than one files
         self.instances_file_path=os.path.join(self.root_path,"instances",self.bench_definition["instances"]+".json")
 
+        self.rest_path=os.path.join(self.results_path,"rest")
+        self.json_path=os.path.join(self.results_path,"json")
+        self.html_path=os.path.join(self.results_path,"html")        
 
     def read_methods(self):
 
@@ -204,6 +207,7 @@ class Bench(object):
             self.benchmarks[benchmark_id].run(timeout)
 
 
+
     def generate_json_output(self):
         self.json_path=os.path.join(self.results_path,"json")
         if not os.path.exists(self.json_path): os.mkdir(self.json_path)
@@ -211,10 +215,4 @@ class Bench(object):
         for benchmark_key in self.benchmarks.keys():
             benchmark=self.benchmarks[benchmark_key]
             metrics= benchmark.create_json_output(self)
-
-    def generate_rest_output(self):
-        self.rest_path=os.path.join(self.results_path,"rest")
-        if not os.path.exists(self.rest_path): os.mkdir(self.rest_path)
-
-        if self.OF==None: self.OF=OutputFactory(self)
-        self.OF.generate_rest()
+ 

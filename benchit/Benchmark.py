@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 
 import os
 import warnings
@@ -57,6 +57,7 @@ class Benchmark(object):
 
 
     def run(self, timeout=0):
+        print self.method.id, self.instance["id"]
 
         def target():
 
@@ -125,6 +126,7 @@ class Benchmark(object):
             else:
                 data_dict["correct"]=False
 
+        benchmark_data={ "method":self.method.id,"instance":self.instance["id"],"command":self.command, "metrics":data_dict}
 
         # Create a file where the code to be executed will be placed
         jsonfile_path=os.path.join(bench.json_path,str(self.method.id)+"_"+str(self.instance["id"])+".json")
@@ -135,7 +137,7 @@ class Benchmark(object):
         except Exception:
             raise Exception("JSON file could not open.")
 
-        json.dump(data_dict, self.jsonfile)
-
+        json.dump(benchmark_data, self.jsonfile)
+        self.jsonfile.close()
 
 
