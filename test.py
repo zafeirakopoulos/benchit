@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: iso-8859-1 -*-
 
 from benchit import *
 import time
@@ -9,10 +9,9 @@ b.read_instances()
 b.read_datasets()
 b.create_benchmarks()
 
-b.run_benchmarks(10)
+b.run_benchmarks(100)
 b. generate_json_output()
 of=OutputFactory(b)
-#time.sleep(5)
 of.generate_rest()
 
 of.generate_html()
