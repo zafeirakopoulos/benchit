@@ -1,4 +1,0 @@
-ret=solve({{A}},{{b}},{{E}},benchmark={{benchmark}})
-
- 
-print ret

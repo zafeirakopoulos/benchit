@@ -1,7 +1,0 @@
-{
-		"methods":"methods",
-		"instances":["random_3x3_matrices_in_-5_5","random_3x3_matrices_in_-20_20","random_3x3_matrices_in_-100_100"],
-		"datasets":"datasets",
-        "timeout":3
-}
-
