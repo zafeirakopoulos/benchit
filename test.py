@@ -1,9 +1,12 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 
 from benchit import *
 import time
+import os
+import sys
 
-b=Bench("../partition-analysis-data/example")
+benchfolder=os.path.join("..","partition-analysis-data",sys.argv[1])
+b=Bench(benchfolder)
 b.read_methods()
 b.read_instances()
 b.read_datasets()
