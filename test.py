@@ -3,7 +3,7 @@
 from benchit import *
 import time
 
-b=Bench("example")
+b=Bench("../partition-analysis-data/example")
 b.read_methods()
 b.read_instances()
 b.read_datasets()
