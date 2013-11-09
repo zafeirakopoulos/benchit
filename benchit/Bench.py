@@ -150,7 +150,7 @@ class Bench(object):
                     instance.update({"id":str(tmp_id)+"@"+str(filename)})
                     all_instances.append(instance)
         except Exception:
-            raise Exception("Instances file could not open.")
+            raise Exception("Instances file could not open." )
 
         # Iterate over the defintion dictionaries, loaded by json.
         # Create ONE dictionary for all instances in this Bench.
