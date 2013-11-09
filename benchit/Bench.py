@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 
 import os
 import json
@@ -140,20 +140,17 @@ class Bench(object):
         all_instances=[]
         instance_files=[]
         try:
-            for filename  in self.bench_definition["instances"]:
+            for filename in self.bench_definition["instances"]:
                 ifilename=os.path.join(self.instances_path, filename+".json")
                 ifile=open(ifilename)
-                instance_files.append(ifile)
+                # Load the json contents
+                instances_data=json.load(ifile)
+                for instance in instances_data:
+                    tmp_id=instance["id"]
+                    instance.update({"id":str(tmp_id)+"@"+str(filename)})
+                    all_instances.append(instance)
         except Exception:
             raise Exception("Instances file could not open.")
-
-        for i in range(len(instance_files)):
-            # Load the json contents
-            instances_data=json.load(instance_files[i])
-            for instance in instances_data:
-                tmp_id=instance["id"]
-                instance.update({"id":str(tmp_id)+"@"+str(i)})
-                all_instances.append(instance)
 
         # Iterate over the defintion dictionaries, loaded by json.
         # Create ONE dictionary for all instances in this Bench.

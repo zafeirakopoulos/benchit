@@ -12,7 +12,7 @@ b.read_instances()
 b.read_datasets()
 b.create_benchmarks()
 
-b.run_benchmarks(100)
+b.run_benchmarks(600)
 b. generate_json_output()
 of=OutputFactory(b)
 of.generate_rest()

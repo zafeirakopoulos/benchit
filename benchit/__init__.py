@@ -10,5 +10,5 @@ from Dataset import *
 from Instance import *
 from Bench import *
 from Metric import *
-from DisplayFactory import *
-from DisplayFactory import *
+from OutputFactory import *
+
