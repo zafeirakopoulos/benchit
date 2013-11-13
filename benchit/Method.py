@@ -1,10 +1,11 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 
 import os
 import imp
 from Metric import *
 from jinja2 import Environment, FileSystemLoader
 
+debug = True
 class Method(object):
     # The id of the method. Has to fit with the path.
     id=None
@@ -42,15 +43,22 @@ class Method(object):
         # Create a dictionary of metrics.
         self.metrics={}
         for metric in self.definition["metrics"]:
-            if "correct" in metric:
+            if "correct" in metric: # maybe this should be == to avoid picking other metrics
                 self.has_validity=True
                 # Load the validity check function
                 # Note: We can make "correct" to be a keyword given in the
                 # definition in order to check different things
                 vreaders = imp.load_source(mod_name,os.path.join(bench.methods_path,str(self.id),"validity.py"))
                 self.validity = getattr(vreaders, "correct")
-                self.metrics["correct"]=Metric("correct", "correct", self.validity)
-            self.metrics[metric[0]]=Metric(metric[0],metric[1],getattr(mreaders, metric[0]))
+                #self.metrics["correct"]=Metric("correct", "correct", self.validity)
+                # This would ruin the choice of which uinstance field is the correct value
+                self.metrics.update({metric[0]:metric[1]})
+                print self.metrics
 
 
+            if "correct" not in metric: # maybe this should be == to avoid picking other metrics                
+                self.metrics[metric[0]]=Metric(metric[0],metric[1],getattr(mreaders, metric[0]))
+
+        if debug: print "method name: \n", self.definition["name"], "\n"                
+        if debug: print "method metrics: \n", self.metrics, "\n"                
 

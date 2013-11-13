@@ -3,6 +3,11 @@
 import os
 import json
 import itertools
+import tarfile
+import time
+import datetime
+
+from shutil import copytree, ignore_patterns,rmtree
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -12,6 +17,9 @@ from Dataset import *
 from Benchmark import *
 
 from OutputFactory import *
+
+#debug = True 
+debug = False
 
 class Bench(object):
     root_path=None
@@ -44,10 +52,19 @@ class Bench(object):
     OF=None
 
     def __init__(self, bench_name):
-        self.root_path=os.path.join(os.getcwd(),bench_name)
 
-        # The name of the json definition is fixed
-        definition_path=os.path.join(self.root_path,"definition.json")
+        ########################################################################
+        #        READ THE BENCHMARKS DEFINITION
+        ########################################################################
+        
+        # The path of the benchmarks definition folder.
+        # Relative to the current directory.
+        # TODO: If a path is given, it has to have correct os dependant delimeters
+        definition_folder=os.path.join(os.getcwd(),bench_name)
+
+        # The name of the json definition.
+        definition_path=os.path.join(definition_folder,"definition.json")
+        if debug: print "definition_path: \n", definition_path, "\n"
 
         # Check if the definition file exists
         if not os.path.exists(definition_path):
@@ -56,9 +73,27 @@ class Bench(object):
         try:
             definition_file=open(definition_path)
         except Exception:
-            raise Exception("Bench definition file could not open.")
+            raise Exception("Bench json definition file could not open.")
         # Load the json dictionary
         self.bench_definition=json.load(definition_file)
+
+
+        if debug: print "bench_definition: \n",self.bench_definition , "\n"
+        ########################################################################
+        #     MOVE THE FILES TO THE NEW BENCHMARKS FOLDER
+        ########################################################################        
+
+        # The folder path is relative to current directory and given 
+        # as the "output" value in the json definition and timestamped.
+        timestp=time.time()
+        timestamp=datetime.datetime.fromtimestamp(timestp).strftime('%Y-%m-%d_%H:%M:%S')
+        self.root_path=os.path.join(os.getcwd(),self.bench_definition["output"]+"-"+timestamp)
+        
+        
+        if debug: print "root_path: \n", self.root_path, "\n"
+        
+        copytree(definition_folder, self.root_path, ignore=ignore_patterns('*.pyc','*~'))
+        
 
         # The methods path is fixed
         self.methods_path=os.path.join(self.root_path,"methods")
@@ -190,7 +225,6 @@ class Bench(object):
         # Select the instance ids appearing in a dataset
         all_instance_ids=list(set([i for i in itertools.chain.from_iterable([self.datasets[dataset_id].instances for dataset_id in dataset_ids])]))
 
-        #print "!!!!!!!!!!!!!!!!!!!",all_instance_ids
 
         benchmark_id=1
         # Iterate over all instance ids
@@ -207,7 +241,6 @@ class Bench(object):
                         self.datasets[dataset_id].benchmarks.append(str(benchmark_id))
                 benchmark_id=benchmark_id+1
 
-        #print "!!!!!!!!!!!!!!!!!!!",self.benchmarks
         return 0
 
     def run_benchmarks(self, timeout=0, dataset_ids=None):
@@ -230,3 +263,25 @@ class Bench(object):
             benchmark=self.benchmarks[benchmark_key]
             metrics= benchmark.create_json_output(self)
  
+    def remove_tmp(self):
+        if debug: print "Remove tmp directory: \n", self.tmp_path, "\n"        
+        if os.path.exists(self.tmp_path):
+            rmtree(self.tmp_path)
+        
+    def create_tarball(self):
+        tarname=str(self.root_path)+".tar.gz"
+        
+        if debug: print "tarname: \n", tarname, "\n"
+        try:
+                        
+            def filter_function(tarinfo):
+                if "/tmp" in tarinfo.name:
+                    return None
+                else:
+                    return tarinfo
+            tar = tarfile.open(tarname, "w:gz")
+            tar.add(self.root_path, arcname=os.path.basename(self.root_path), filter=filter_function)
+            tar.close()
+        except Exception:
+            raise Exception("Tarball could not be created.")            
+

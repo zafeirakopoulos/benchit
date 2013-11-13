@@ -9,6 +9,11 @@ import time
 
 import json
 
+#from sage.all import *
+    
+#debug = True
+debug = False
+
 class Benchmark(object):
     method=None
     instance=None
@@ -111,7 +116,11 @@ class Benchmark(object):
 
 
         for metric_key in self.method.metrics.keys():
+            if debug: print "method name: \n", self.method.definition["name"], "\n"
             if metric_key=="correct":
+                if debug: print "metric_key: \n", metric_key, "\n"                
+                if debug: print "metric_key value: \n", self.method.metrics[metric_key], "\n"
+                if debug: print "method metrics: \n", self.method.metrics, "\n"                                
                 data_dict[metric_key]=self.instance[self.method.metrics["correct"]]
             else:
                 metric_callable=self.method.metrics[metric_key].reader

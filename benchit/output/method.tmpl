@@ -1,0 +1,27 @@
+ 
+Method: {{ method["name"]}} (id= {{ method["id"]}})
+**************************
+
+
+System:
+-------
+ {{ method["system"]}}
+
+System call: 
+------------
+{{ method["system_call"]}}
+
+
+Parameters: 
+-----------
+{% for key in method["parameters"].keys() %}
+    * {{ key }}: {{ method["parameters"][key] }} 
+{%- endfor %}
+
+
+Metrics:
+--------
+{% for key in method["metrics"].keys() %}
+    * {{ key }}: {{ method["metrics"][key] }} 
+{%- endfor %}
+

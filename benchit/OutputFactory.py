@@ -1,4 +1,4 @@
-# -*- coding: iso-8859-1 -*-
+# -*- coding: utf-8 -*-
 import os
 import sys
 #sphinx_path="benchit/packages//Sphinx-1.2b3-py2.7.egg"
@@ -7,6 +7,7 @@ import sphinx
 from jinja2 import Environment, FileSystemLoader
 import json
 
+debug = True
 class OutputFactory(object):
 
     bench=None
@@ -41,7 +42,28 @@ class OutputFactory(object):
     def generate_rest(self):
         self.bench.rest_path=os.path.join(self.bench.results_path,"rest")
         if not os.path.exists(self.bench.rest_path): os.mkdir(self.bench.rest_path)
+
+        instances_toc=[]
+        datasets_toc=[]
+        benchmarks_toc=[]        
+
+        instance_tmpl=self.output_env.get_template("instance.tmpl")
+        if debug: print "Instances: \n", self.bench.instances, "\n"                
         
+        for instance_key in self.bench.instances.keys():
+            render_data={}
+            render_data.update(self.bench.instances[instance_key])
+            if debug: print "Render data: \n", render_data, "\n"                
+
+            instances_toc.append("instance_"+str(self.bench.instances[instance_key]["id"]))
+            bench_rst=instance_tmpl.render(render_data)
+            filepath=os.path.join(self.bench.rest_path, "instance_"+str(self.bench.instances[instance_key]["id"])+".rst" )
+            outfile=open( filepath ,"w")
+            outfile.write(bench_rst) 
+            outfile.close()
+
+
+
         all_json=[]
         for benchmark_file in os.listdir(self.bench.json_path):
             jsonfilename=os.path.join(self.bench.json_path, benchmark_file)
@@ -53,22 +75,40 @@ class OutputFactory(object):
             except Exception:
                 raise Exception("Could not open json file "+benchmark_file)
             
-        toc=[]
+        benchmark_tmpl=self.output_env.get_template("benchmark.tmpl")        
         for benchmark_data in all_json:
-            benchmark_tmpl=self.output_env.get_template("benchmark.tmpl")
             render_data={}
             render_data.update(benchmark_data)
             render_data.update({"method":self.bench.methods[benchmark_data["method"]], "instance":self.bench.instances[benchmark_data["instance"]]})
-            toc.append(str(benchmark_data["method"])+"_"+str(benchmark_data["instance"]))
+            benchmarks_toc.append(str(benchmark_data["method"])+"_"+str(benchmark_data["instance"]))
             bench_rst=benchmark_tmpl.render(render_data)
             filepath=os.path.join(self.bench.rest_path, str(benchmark_data["method"])+"_"+str(benchmark_data["instance"])+".rst" )
             outfile=open( filepath ,"w")
             outfile.write(bench_rst) 
             outfile.close()
 
-        toctree=".. toctree:: \n  :maxdepth: 2\n\n"
-        for filename in toc:
-            toctree=toctree+ "  "+filename + " \n"
+        toctree="Bench \n-------- \n.. toctree:: \n  :maxdepth: 1\n\n"
+        toctree=toctree+ "  instances.rst \n"
+        toctree=toctree+ "  benchmarks.rst \n"        
         outfile=open( os.path.join(self.bench.rest_path, "index.rst" ) ,"w")
         outfile.write(toctree) 
         outfile.close()            
+       
+        if debug: print "Instances Toc: \n", instances_toc, "\n"                
+        if debug: print "Benchmarks Toc: \n", benchmarks_toc, "\n"                
+
+        toctree="Instances \n------------ \n.. toctree:: \n  :maxdepth: 1\n\n"
+        for filename in instances_toc:
+            toctree=toctree+ "  "+filename + " \n"
+        outfile=open( os.path.join(self.bench.rest_path, "instances.rst" ) ,"w")
+        outfile.write(toctree) 
+        outfile.close()            
+
+
+        toctree="Benchmarks \n------------ \n.. toctree:: \n  :maxdepth: 1\n\n"
+        for filename in benchmarks_toc:
+            toctree=toctree+ "  "+filename + " \n"
+        outfile=open( os.path.join(self.bench.rest_path, "benchmarks.rst" ) ,"w")
+        outfile.write(toctree) 
+        outfile.close()            
+
