@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: iso-8859-1 -*-
 
 import os
 import warnings
@@ -49,9 +49,30 @@ class Benchmark(object):
         except Exception:
             raise Exception("Codefile could not open.")
 
+        # Create LAttE file  TO BE REMOVED from here
+        self.latte_path=os.path.join(bench.tmp_path,str(method_id)+"_"+str(instance_id)+".equ")
+        if os.path.exists(self.latte_path):
+            warnings.warn(Warning(self.latte_path+" already exists."),stacklevel=2)
+        try:
+            self.lattefile=open(self.latte_path,"w")
+        except Exception:
+            raise Exception("latte file could not open.")
+
+        Lines=[]
+        Lines.append(str(len(self.instance["b"]))+ " " + str(1+len(self.instance["A"][0])))
+        for e in range(len(self.instance["A"])):
+            Lines.append(" ".join([str((-1)*self.instance["b"][e])] + [ str(i) for i in  self.instance["A"][e] ]))
+        Lines.append("linearity " + str(sum(self.instance["E"])) + " " + " ".join([ str((i+1)*self.instance["E"][i]) for i in range(len(self.instance["E"])) if (i+1)*self.instance["E"][i]!=0]))
+        Lines.append("nonnegative " + str(len(self.instance["A"][0]))+ " " + " ".join([ str((i+1)) for i in range(len(self.instance["A"][0]))]))
+        if debug: print "Lines \n", Lines
+        for line in Lines:
+            self.lattefile.write(line)
+            self.lattefile.write("\n")
+        self.lattefile.close()
 
         #Create the code
-        method_code=self.method.code.render(self.instance.items() + self.method.definition["parameters"].items())
+        #method_code=self.method.code.render(self.instance.items() + self.method.definition["parameters"].items()+{"lattefilename":self.latte_path})
+        method_code=self.method.code.render(self.instance.items() + self.method.definition["parameters"].items()+{"lattefilename":self.latte_path,"errfilename":self.errfile_path,"oufilename":self.outfile_path}.items())
         system_code=bench.systems_tmpl[self.method.definition["system"]].render({"method_code":method_code})
 
         # Write code to the codefile
